@@ -1,57 +1,101 @@
 📂 Phishing Investigation Case Study — LetsDefend SOC Lab
+
 Type: Security Operations (SOC) Investigation
 Category: Phishing | Threat Hunting | Incident Response
 Platform: LetsDefend.io
-Skills Demonstrated: Threat Intelligence, Log Analysis, Email Analysis, OSINT, Endpoint Investigation, IOC Extraction, Containment, Reporting
+Skills Demonstrated: Threat Intelligence • Email Analysis • Log Analysis • OSINT • Endpoint Investigation • Firewall Analysis • IOC Extraction • Containment • Reporting
+
 📝 Overview
 
-This case study documents a complete phishing investigation performed on LetsDefend.
-The incident involved an impersonating domain (letsdefwnd.io) targeting a user inside the organization. The analysis covers email inspection, threat intelligence enrichment, firewall and endpoint logs, and final remediation actions.
+This case study documents a full phishing investigation performed on LetsDefend.
+The incident involved an impersonating domain letsdefwnd.io targeting an employee.
+The investigation includes:
 
-This write-up demonstrates full SOC workflow handling — from detection to containment and eradication.
+Email analysis
+
+Threat intelligence enrichment
+
+OSINT validation
+
+Browser & firewall log correlation
+
+Endpoint inspection
+
+IOC extraction
+
+Containment & response
+
+This demonstrates a complete Tier-1/Tier-2 SOC workflow.
+
+🧾 Initial Log Alert (Starting Point)
+
+The first alert originated from the CTI brand protection system:
+
+Log Details
+EventID: 304
+Rule: SOC326 - Impersonating Domain MX Record Change Detected
+Source: no-reply@cti-report.io
+Destination: soc@letsdefend.io
+Trigger Reason: MX record of suspicious domain changed
+Domain: letsdefwnd[.]io
+MX Record: mail.mailerhost[.]net
+Action: Allowed
+
+Interpretation
+
+A domain similar to "letsdefend.io" had its MX records changed, a common precursor to phishing activity.
+
+Domain resembled a typosquatting attack:
+letsdefend.io → letsdefwnd.io
+
+This signaled that attackers were preparing to send emails from this impersonating domain.
 
 🚨 Incident Summary
 
-LetsDefend alerted on a suspicious domain whose MX records had changed, indicating possible phishing setup.
+Shortly after the CTI alert, a phishing email was delivered to employee Mateo:
 
-Shortly after, a phishing email was delivered to the user Mateo, claiming he had “won a voucher” and directing him to a fake LetsDefend domain:
+From: voucher@letsdefwnd.io
+Subject: "Congratulations! You've Won a Voucher"
+URL: http://letsdefwnd.io/
 
-http://letsdefwnd.io/
+
+The email used branding, social engineering, and a fraudulent voucher link.
 
 🔍 Investigation Steps
 1. Email Analysis
 
-Sender: voucher@letsdefwnd.io
+Sender domain was the same impersonating domain flagged earlier.
 
-Subject: “Congratulations! You’ve Won a Voucher”
+Email included a phishing link redirecting to letsdefwnd.io.
 
-Contained a button redirecting to the impersonating domain
+Email templates resembled standard phishing reward schemes.
 
-Email content and structure matched common phishing patterns
-
-Action: Phishing email identified and removed.
+Action: Identified as phishing — removed from mailbox.
 
 2. Threat Intelligence Review
 
 Using LetsDefend Threat Intel:
 
-Domain: letsdefwnd.io
+letsdefwnd.io tagged as phishing
 
-Flagged as phishing
+Associated with multiple VPS IPs
 
-Associated with multiple suspicious IPs
+Not owned by LetsDefend
 
-Not a legitimate LetsDefend asset
+Risk score elevated
 
 VirusTotal Findings
 
-Domain not currently active but previously used for phishing
+Domain inactive at time of scan (likely taken down)
 
-IPs associated with similar malicious hosting infrastructure
+Previously associated with multiple Linode/Akamai cloud IPs
+
+IP 45.33.23.183 flagged as malicious
+(Criminal IP, Forcepoint ThreatSeeker, CyRadar)
 
 3. OSINT & Reputation Checks
 
-Checked using:
+Tools used:
 
 VirusTotal
 
@@ -61,97 +105,124 @@ IPinfo
 
 BrowserLeaks
 
-WHOIS & DNS
+WHOIS / DNS lookup
 
-Key outcomes:
+OSINT Outcome
 
-Domain hosted on Linode / Akamai Connected Cloud, common for phishing kits
+Domain hosted on Linode/Akamai Cloud, commonly used for phishing kits
 
-One of the IPs (45.33.23.183) was flagged as malicious by several vendors
+IP 45.33.23.183 appears in:
 
-4. Endpoint Investigation
-Browser History
+Malware reports
 
-Mateo’s endpoint recorded a visit to:
+Security community warnings
 
+Lists of suspicious VPS hosting clusters
+
+This matched attacker infrastructure patterns.
+
+🖥️ 4. Endpoint Investigation
+Browser History (Key Evidence)
+2024-09-18 13:32:13
 http://www.letsdefwnd.io/
 
 
-Timestamp matched the email receipt → User clicked the phishing link.
+This confirms:
 
-Firewall Logs
+✔ The user clicked the phishing link
+✔ The phishing domain was active during that time
+Firewall Log Correlation
 
-The endpoint made two outbound HTTPS connections to:
+Two outbound HTTPS connections were recorded:
 
-45.33.23.183
+source_address: 172.16.17.162 (Mateo)
+destination_address: 45.33.23.183
+destination_port: 443
 
+Importance
 
-This IP is:
+Destination IP is confirmed malicious
 
-Malicious in VirusTotal
+This validates that the endpoint successfully communicated with the attacker-controlled server
 
-Known for phishing campaigns
+This eliminates the possibility of a false click or blocked attempt
+→ actual connection was made
 
-Belongs to Akamai Connected Cloud (Linode)
+Process & Terminal Log Review
 
-This confirms direct communication between the endpoint and the attacker infrastructure.
+No execution of scripts (PowerShell, CMD, WScript, MSHTA)
 
-Process & Terminal Logs
+No suspicious parent-child process behavior
 
-No suspicious PowerShell, cmd, mshta, or file downloads detected
+No downloads (.exe, .zip, .js, .scr)
 
-No malware execution observed
+Conclusion
 
-Conclusion:
-The attack was a credential phishing attempt, not a malware infection.
+This was a credential phishing attempt, not a malware dropper.
 
 🛡️ Containment & Response
 Actions Taken
 
-Deleted phishing email from mailbox
+Deleted the phishing email
 
-Extracted and blocked IOCs
+Added IOC entries:
 
 letsdefwnd[.]io
 
 45.33.23.183
-
-Contained the endpoint as precaution
-
-Reset Mateo’s credentials and invalidated sessions
-
-Educated user on phishing awareness
-
-No malware found, but credentials were potentially exposed.
-📌 Indicators of Compromise (IOC)
-
-Malicious URL:
-
-letsdefwnd[.]io
-
-
-Malicious IP:
-
-45.33.23.183
-
-
-MX Record Used by Attackers:
 
 mail.mailerhost.net
 
-📊 Conclusion
+Blocked IP + domain in security layers
 
-This incident was a successful phishing lure where the user clicked a malicious link.
-Investigation confirmed communication with a known phishing server, but no further compromise occurred.
+Contained the endpoint
 
-The incident was contained, user credentials were protected, and preventative measures were implemented to block future attempts.
+Reset Mateo’s credentials
 
-This lab provided hands-on experience in:
+Terminated active sessions
 
-✔ SOC Tier-1/Tier-2 investigation workflows
-✔ Log correlation (email, firewall, endpoint)
-✔ Threat intel enrichment
-✔ OSINT validation
-✔ IOC extraction & blocking
-✔ User awareness training
-✔ Writing SOC case reports
+User informed & trained
+
+Verified no lateral movement or malware activity
+
+📌 Indicators of Compromise (IOC)
+
+Malicious URL
+
+letsdefwnd[.]io
+
+
+Malicious IP
+
+45.33.23.183
+
+
+Attacker MX Record
+
+mail.mailerhost.net
+
+📊 Final Conclusion
+
+This was a confirmed phishing attack using an impersonating domain.
+The user clicked the link, and the endpoint connected to a malicious server, but no malware was executed.
+
+The incident was contained through:
+
+IOC blocking
+
+Endpoint containment
+
+Credential reset
+
+Email removal
+
+User training
+
+This investigation demonstrates:
+
+✔ SOC Tier-1/Tier-2 investigation workflow
+✔ Log correlation skills (email + endpoint + firewall)
+✔ IOC extraction & threat intel enrichment
+✔ OSINT analysis
+✔ Incident containment & remediation
+✔ Clear reporting and documentation
