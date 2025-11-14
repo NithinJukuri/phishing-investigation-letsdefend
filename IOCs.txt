@@ -1,0 +1,15 @@
+# Indicators of Compromise (IOC) - LetsDefend Phishing Investigation
+
+## Malicious URL
+letsdefwnd[.]io
+
+## Malicious IP Address
+45.33.23.183
+
+## MX Record Used by Attackers
+mail.mailerhost.net
+
+## Additional Related Indicators (Contextual)
+- Impersonating domain mimicking letsdefend.io
+- Phishing sender address: voucher@letsdefwnd.io
+- Browser access recorded to: http://www.letsdefwnd.io/
